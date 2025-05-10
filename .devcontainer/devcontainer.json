@@ -13,9 +13,12 @@
   "postCreateCommand": "pip install -r backend/requirements.txt && npm --prefix frontend install",
   "customizations": {
     "vscode": {
+      "customizations": {
+    "vscode": {
       "settings": {
         "workbench.enableExperiments": false,
-        "webview.experimental.useIframes": true
+        "workbench.webview.useIframes": true,
+        "security.workspace.trust.enabled": false
       }
     }
   }
