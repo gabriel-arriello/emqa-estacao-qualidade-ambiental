@@ -1,0 +1,14 @@
+{
+  "name": "Estação Ambiental",
+  "dockerFile": "Dockerfile",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "ms-python.python",
+    "vue.volar",
+    "esbenp.prettier-vscode"
+  ],
+  "forwardPorts": [5000, 8080],
+  "postCreateCommand": "pip install -r backend/requirements.txt && npm --prefix frontend install"
+}
