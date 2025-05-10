@@ -10,5 +10,13 @@
     "esbenp.prettier-vscode"
   ],
   "forwardPorts": [5000, 8080],
-  "postCreateCommand": "pip install -r backend/requirements.txt && npm --prefix frontend install"
+  "postCreateCommand": "pip install -r backend/requirements.txt && npm --prefix frontend install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "workbench.enableExperiments": false,
+        "webview.experimental.useIframes": true
+      }
+    }
+  }
 }
