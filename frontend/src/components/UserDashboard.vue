@@ -1,10 +1,10 @@
 <template>
   <div class="dashboard">
-    <h1>EST. AMBIENTAL</h1>
+    <h1>ESTAÇÃO DE QUALIDADE AMBIENTAL</h1>
     
     <div class="grid">
       <div v-for="sensor in sensoresFormatados" :key="sensor.nome" class="col-12 md:col-6 lg:col-4">
-        <router-link :to="'/sensor/' + sensor.nome">
+        <router-link :to="'/sensor/' + sensor.columName">
           <Card>
             <template #title>{{ sensor.nome }}</template>
             <template #content>
@@ -13,7 +13,7 @@
                 <span class="text-xl">{{ sensor.unidade }}</span>
                 <Chart 
                   type="line"
-                  :data="getSensorChartData(sensor.nome)"
+                  :data="getSensorChartData(sensor.columName)"
                   :options="chartOptions"
                   class="sensor-chart"
                 />
@@ -54,17 +54,20 @@ export default {
     },
     formatSensorName(name) {
       const names = {
-        pm25: 'PMA.5',
+        pm25: 'PM 2.5',
+        pm10: 'PM 10',
         temperatura: 'Temperatura',
         umidade: 'Umidade',
-        ruido: 'Nível Sonoro',
+        uv: 'Luz Ultravioleta',
+        ruido: 'Ruído Sonoro',
         co: 'Monóxido de Carbono',
         no2: 'Dióxido de Nitrogênio',
-        voc: 'COVs'
+        voc: 'VOCs'
       };
       return names[name] || name;
     },
     getSensorChartData(sensorName) {
+      console.log("sensor name: " + sensorName);
       return {
         labels: this.historico.map(d => new Date(d.timestamp).toLocaleTimeString()),
         datasets: [{
@@ -83,6 +86,7 @@ export default {
         ]);
         this.dados = current.data;
         this.historico = history.data;
+        console.log(this.historico);
       } catch (error) {
         console.error("Erro ao obter dados:", error);
       }
@@ -101,6 +105,7 @@ export default {
         .filter(([nome]) => nome !== 'timestamp')
         .map(([nome, valor]) => ({
           nome: this.formatSensorName(nome),
+          columName: nome,
           valor,
           unidade: this.getUnidade(nome)
         }));

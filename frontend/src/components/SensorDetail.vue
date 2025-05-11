@@ -6,7 +6,6 @@
         @click="$router.go(-1)" 
         class="mb-4"
       />
-      
       <Card>
         <template #title>{{ nomeSensor }}</template>
         <template #content>
@@ -17,13 +16,7 @@
           <Chart 
             type="line" 
             :data="chartData" 
-            :options="{
-              plugins: { legend: { display: false } },
-              scales: { 
-                y: { title: { display: true, text: unidade } },
-                x: { title: { display: true, text: 'Horário' } } 
-              }
-            }" 
+            :options="chartOptions" 
             class="h-20rem"
           />
         </template>
@@ -40,17 +33,11 @@
   export default {
     components: { Card, Chart, Button },
     data() {
+      console.log("id: " + this.$route.params.id)
       return {
         sensorId: this.$route.params.id,
         historico: [],
         pollingInterval: null,
-        chartOptions: {
-          plugins: { legend: { display: false } },
-          scales: { 
-            y: { title: { display: true, text: this.unidade } },
-            x: { title: { display: true, text: 'Horário' } } 
-          }
-        }
       }
     },
     computed: {
@@ -86,6 +73,15 @@
             fill: false
           }]
         }
+      },
+      chartOptions() {
+        return {
+          plugins: { legend: { display: false } },
+          scales: { 
+            y: { title: { display: true, text: this.unidade } },
+            x: { title: { display: true, text: 'Horário' } } 
+          }
+        };
       }
     },
     methods: {
@@ -93,6 +89,7 @@
         try {
           const response = await axios.get('http://localhost:5000/historico');
           this.historico = response.data.reverse(); // Mais recentes primeiro
+          //console.log("historico: " + this.historico)
         } catch (error) {
           console.error("Erro ao obter histórico:", error);
         }
