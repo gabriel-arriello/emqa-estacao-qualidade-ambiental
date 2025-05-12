@@ -8,6 +8,7 @@
             <span class="text-2xl">{{ unidade }}</span>
           </div>
           <Chart 
+            ref="chart" 
             type="line" 
             :data="chartData" 
             :options="chartOptions" 
@@ -94,20 +95,29 @@
           scales: { 
             y: { title: { display: true, text: this.unidade } },
             x: { title: { display: true, text: 'Tempo (hh-mm-ss)' } } 
-          }
+          },
+          animation: false,  // Remove animação
         };
       }
     },
     methods: {
       async fetchData() {
-        try {
-          const response = await axios.get('http://localhost:5000/historico');
-          this.historico = response.data; // Mais recentes primeiro
-          //console.log("historico: " + this.historico)
-        } catch (error) {
-          console.error("Erro ao obter histórico:", error);
+          try {
+            const response = await axios.get('http://localhost:5000/historico');
+            const novosDados = response.data;
+            
+            // Adiciona os novos dados ao histórico (preservando os dados anteriores)
+            this.historico = [...novosDados, ...this.historico];
+            
+            this.$nextTick(() => {
+              // Aqui, você deve acessar o gráfico e adicionar os novos dados de maneira incremental
+              this.$refs.chart.chart.update(); // Atualiza o gráfico sem animação
+            });
+            
+          } catch (error) {
+            console.error("Erro ao obter histórico:", error);
+          }
         }
-      }
     },
     mounted() {
       this.fetchData();
@@ -124,5 +134,6 @@
     padding: 1rem;
     max-width: 1200px;
     margin: 0 auto;
+    min-height: 100vh;
   }
   </style>

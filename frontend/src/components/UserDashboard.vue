@@ -17,7 +17,9 @@
           ]"
         >
           <Card class="cursor-pointer sensor-card" @click="$router.push('/sensor/' + sensor.columName)">
-            <template #title>{{ sensor.nome }}</template>
+            <template #title>
+              <div class="sensor-card-title">{{ sensor.nome }}</div>
+            </template>
             <template #content>
               <div class="text-center">
                 <span class="text-4xl font-bold">{{ sensor.valor }}</span>
@@ -27,12 +29,12 @@
                   :data="getSensorChartData(sensor.columName)"
                   :options="chartOptions"
                   class="sensor-chart"
+                  style="width: 100% !important; height: 160px;"
                 />
               </div>
             </template>
           </Card>
         </div>
-
         <!-- Adiciona lugares vazios para manter alinhamento -->
         <div
           v-for="n in 3 - linha.length"
@@ -58,7 +60,11 @@ export default {
     return {
       dados: {},
       historico: [],
+      chartData: {}, // <--- aqui guardaremos os dados dos gráficos
       chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 }, // <--- desativa animações
         plugins: {
           legend: {
             display: false
@@ -89,18 +95,9 @@ export default {
       };
       return names[name] || name;
     },
-    getSensorChartData(sensorName) {
-      console.log("sensor name: " + sensorName);
-      return {
-        labels: this.historico.map(d => new Date(d.timestamp).toLocaleTimeString()),
-        datasets: [{
-          data: this.historico.map(d => d[sensorName]),
-          borderColor: '#3498db',
-          tension: 0.1,
-          borderWidth: 2
-        }]
-      };
-    },
+  getSensorChartData(sensorName) {
+    return this.chartData[sensorName] || { labels: [], datasets: [] };
+  },
     async fetchData() {
       try {
         const [current, history] = await Promise.all([
@@ -109,7 +106,31 @@ export default {
         ]);
         this.dados = current.data;
         this.historico = history.data;
-        console.log(this.historico);
+
+        // Atualiza os dados dos gráficos
+        Object.keys(current.data).forEach(sensorName => {
+          if (sensorName === 'timestamp') return;
+
+          const labels = history.data.map(d => new Date(d.timestamp).toLocaleTimeString());
+          const data = history.data.map(d => d[sensorName]);
+
+          // Se já existe, atualiza o conteúdo sem recriar o objeto
+          if (this.chartData[sensorName]) {
+            this.chartData[sensorName].labels = labels;
+            this.chartData[sensorName].datasets[0].data = data;
+          } else {
+            // Se ainda não existe, cria o objeto
+            this.chartData[sensorName] = {
+              labels,
+              datasets: [{
+                data,
+                borderColor: '#3498db',
+                tension: 0.1,
+                borderWidth: 2
+              }]
+            };
+          }
+        });
       } catch (error) {
         console.error("Erro ao obter dados:", error);
       }
@@ -144,8 +165,8 @@ export default {
     getUnidade() {
       return (nome) => {
         const unidades = {
-          pm25: ' pm2.5/10^-4 m³',
-          pm10: ' pm10.0/10^-4 m³',
+          pm25: ' µg/m³',
+          pm10: ' µg/m³',
           temperatura: ' °C',
           umidade: ' %',
           uv: ' UV index',
@@ -164,11 +185,21 @@ export default {
 </script>
 
 <style scoped>
+.text-center {
+  text-align: center;
+}
+
 .dashboard {
   padding: 1rem;
 }
 
+.sensor-card-title {
+  text-align: center;
+  font-weight: bold;
+}
+
 .sensor-chart {
+  width: 100%;
   height: 100px;
   margin-top: 10px;
 }
@@ -183,11 +214,14 @@ export default {
 .sensor-row {
   display: flex;
   justify-content: space-between;
+  margin: 0 -0.5rem; /* remove o padding lateral interno extra */
 }
 
 .sensor-card-wrapper {
-  width: 33.3%;
+  width: 33.33%;
   display: flex;
+  padding: 0 0.5rem; /* espaço lateral interno para separação leve entre cards */
+  box-sizing: border-box;
 }
 
 .align-left {
@@ -204,6 +238,5 @@ export default {
 
 .sensor-card {
   width: 100%;
-  max-width: 18rem;
 }
 </style>
