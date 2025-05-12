@@ -60,14 +60,6 @@ def get_historico():
             return jsonify(json.load(f)), 200
     return jsonify([]), 200
 
-@app.route("/ultima-atualizacao")
-def get_ultima_atualizacao():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE) as f:
-            dados = json.load(f)
-            return jsonify({"timestamp": dados["timestamp"]}), 200
-    return jsonify({"timestamp": None}), 404
-
 # Função para gerar valores aleatórios e salvar no histórico
 def gerar_dados_automaticamente():
     while True:
