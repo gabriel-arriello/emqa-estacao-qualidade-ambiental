@@ -1,11 +1,22 @@
 <template>
   <div class="dashboard">
-    <h1>ESTAÇÃO DE QUALIDADE AMBIENTAL</h1>
-    
-    <div class="grid">
-      <div v-for="sensor in sensoresFormatados" :key="sensor.nome" class="col-12 md:col-6 lg:col-4">
-        <router-link :to="'/sensor/' + sensor.columName">
-          <Card>
+    <h1 class="text-center mb-4">ESTAÇÃO DE QUALIDADE AMBIENTAL</h1>
+
+    <div class="sensor-rows">
+      <div 
+        class="sensor-row"
+        v-for="(linha, linhaIndex) in linhasDeSensores"
+        :key="linhaIndex"
+      >
+        <div
+          v-for="(sensor, index) in linha"
+          :key="sensor.columName"
+          :class="[
+            'sensor-card-wrapper',
+            index === 0 ? 'align-left' : index === 1 ? 'align-center' : 'align-right'
+          ]"
+        >
+          <Card class="cursor-pointer sensor-card" @click="$router.push('/sensor/' + sensor.columName)">
             <template #title>{{ sensor.nome }}</template>
             <template #content>
               <div class="text-center">
@@ -20,7 +31,17 @@
               </div>
             </template>
           </Card>
-        </router-link>
+        </div>
+
+        <!-- Adiciona lugares vazios para manter alinhamento -->
+        <div
+          v-for="n in 3 - linha.length"
+          :key="'placeholder-' + n + '-' + linhaIndex"
+          class="sensor-card-wrapper"
+          style="visibility: hidden;"
+        >
+          <div class="sensor-card"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -54,15 +75,17 @@ export default {
     },
     formatSensorName(name) {
       const names = {
-        pm25: 'PM 2.5',
-        pm10: 'PM 10',
+        pm25: 'Material Particulado 2.5 (PM2.5)',
+        pm10: 'Material Particulado 10.0 (PM10.0)',
         temperatura: 'Temperatura',
         umidade: 'Umidade',
-        uv: 'Luz Ultravioleta',
+        uv: 'Luz Ultravioleta (UV)',
         ruido: 'Ruído Sonoro',
-        co: 'Monóxido de Carbono',
-        no2: 'Dióxido de Nitrogênio',
-        voc: 'VOCs'
+        co: 'Monóxido de Carbono (CO)',
+        no2: 'Dióxido de Nitrogênio (NO2)',
+        voc: 'Compostos Orgânicos Voláteis (VOCs) ',
+        o3: 'Trioxigênio (O3)',
+        co2: 'Dióxido de Carbono (CO2)',
       };
       return names[name] || name;
     },
@@ -101,26 +124,37 @@ export default {
   },
   computed: {
     sensoresFormatados() {
-      return Object.entries(this.dados)
-        .filter(([nome]) => nome !== 'timestamp')
-        .map(([nome, valor]) => ({
-          nome: this.formatSensorName(nome),
-          columName: nome,
-          valor,
-          unidade: this.getUnidade(nome)
-        }));
+    return Object.entries(this.dados)
+      .filter(([nome]) => nome !== 'timestamp')
+      .map(([nome, valor]) => ({
+        nome: this.formatSensorName(nome),
+        columName: nome,
+        valor,
+        unidade: this.getUnidade(nome)
+      }));
+    },
+    linhasDeSensores() {
+      const linhas = [];
+      const sensores = this.sensoresFormatados;
+      for (let i = 0; i < sensores.length; i += 3) {
+        linhas.push(sensores.slice(i, i + 3));
+      }
+      return linhas;
     },
     getUnidade() {
       return (nome) => {
         const unidades = {
-          temperatura: "°C",
-          umidade: "%",
-          co: "ppm",
-          no2: "ppm",
-          voc: "ppm",
-          pm25: "µg/m³",
-          pm10: "µg/m³",
-          ruido: "dB"
+          pm25: ' pm2.5/10^-4 m³',
+          pm10: ' pm10.0/10^-4 m³',
+          temperatura: ' °C',
+          umidade: ' %',
+          uv: ' UV index',
+          ruido: ' dB',
+          co: ' mg/m³',
+          no2: ' µg/m³',
+          voc: ' ppb',
+          o3: ' ppb',
+          co2: ' ppm',
         };
         return unidades[nome] || "";
       };
@@ -137,5 +171,39 @@ export default {
 .sensor-chart {
   height: 100px;
   margin-top: 10px;
+}
+
+/* CSS novo para layout 3 por linha com alinhamento específico */
+.sensor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sensor-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sensor-card-wrapper {
+  width: 33.3%;
+  display: flex;
+}
+
+.align-left {
+  justify-content: flex-start;
+}
+
+.align-center {
+  justify-content: center;
+}
+
+.align-right {
+  justify-content: flex-end;
+}
+
+.sensor-card {
+  width: 100%;
+  max-width: 18rem;
 }
 </style>

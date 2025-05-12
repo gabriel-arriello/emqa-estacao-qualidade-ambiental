@@ -77,6 +77,8 @@ def gerar_dados_automaticamente():
                 "co": round(random.uniform(0, 10), 2),
                 "no2": round(random.uniform(0, 1), 2),
                 "voc": round(random.uniform(0, 10), 2),
+                "o3": round(random.uniform(0, 10), 2),
+                "co2": round(random.uniform(0, 10), 2),
                 "pm25": random.randint(0, 100),
                 "pm10": random.randint(0, 100),
                 "uv": round(random.uniform(0, 15), 1),
