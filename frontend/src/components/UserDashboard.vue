@@ -81,8 +81,9 @@ export default {
     },
     formatSensorName(name) {
       const names = {
-        pm25: 'Material Particulado 2.5 (PM2.5)',
+        pm1: 'Material Particulado 1.0 (PM1.0)',
         pm10: 'Material Particulado 10.0 (PM10.0)',
+        pm25: 'Material Particulado 2.5 (PM2.5)',
         temperatura: 'Temperatura',
         umidade: 'Umidade',
         uv: 'Luz Ultravioleta (UV)',
@@ -165,8 +166,9 @@ export default {
     getUnidade() {
       return (nome) => {
         const unidades = {
-          pm25: ' µg/m³',
-          pm10: ' µg/m³',
+          pm1: ' pm1.0/10^-4 m³',
+          pm10: ' pm10.0/10^-4 m³',
+          pm25: ' pm2.5/10^-4 m³',
           temperatura: ' °C',
           umidade: ' %',
           uv: ' UV index',
