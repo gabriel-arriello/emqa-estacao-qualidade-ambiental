@@ -1,0 +1,206 @@
+#include <Wire.h>
+#include "Adafruit_SGP30.h"
+#include <DHT.h>
+#include <GUVA_S12SD.h>
+#include <MICS4514.h>
+#include <PMS5003.h>
+#include <MQ131.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "gabriel";
+const char* password = "arriello";
+const char* serverUMQ_RL = "http://192.168.31.197:5000/dados";
+
+// Definições de pinos
+#define MQ_ANALOG 1
+#define MQ_HEATER 2
+#define SGP_SDA 8
+#define SGP_SCL 9
+#define DHT_OUT 4
+#define GUVA_OUT 3
+#define MAX_OUT 10
+#define MICS_RED 7
+#define MICS_NOX 6
+#define MICS_PRE 5
+#define PMS_RXD2 18
+#define PMS_TXD2 17
+
+// Constantes
+#define MQ_RL 1000000
+#define VREF 3.3
+#define DHT_TYPE DHT22
+#define SAMPLEWINDOW 100
+
+// Variáveis globais
+
+// Sensores
+Adafruit_SGP30 sgp;
+DHT dht(DHT_OUT, DHT_TYPE);
+GUVAS12SD guva(GUVA_OUT, 3.3);
+MQ131Class mq131(MQ_ANALOG, MQ_HEATER);
+MICS4514 mics(MICS_RED, MICS_NOX, MICS_PRE);
+PMS5003Data PMSdata;
+
+// Definição das funcoes auxiliares
+uint32_t getAbsoluteHumidity(float temperature, float humidity);
+void calibrateSGP30();
+float readMicRMS();
+float convertVoltageToDB(float m, float b, float voltageRMS);
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(SGP_SDA, SGP_SCL);
+  dht.begin();
+  Serial1.begin(9600, SERIAL_8N1, PMS_RXD2, PMS_TXD2);
+  while(!Serial || !Serial1){
+    delay(1000);
+  }
+
+  if (!sgp.begin()) {
+    Serial.println("SGP30 não encontrado!");
+    while (1);
+  }
+
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConectado ao Wi-Fi!");
+  
+  mics.preHeat();
+  
+  mq131.begin();
+  delay(90000); // Esperar pré-aquecimento inicial
+}
+
+void loop() {
+  // Leitura DHT22
+  float TEMP = dht.readTemperature();
+  float HUMID = dht.readHumidity();
+
+  // Leitura MQ131
+  mq131.setEnv((int8_t)round(TEMP), (uint8_t)round(HUMID));
+
+  float O3 = mq131.getO3(PPB);
+
+  // Leitura MAX9814
+  float DB = convertVoltageToDB(1.9097, -187.0903, readMicRMS());
+
+  // Leitura SGP30
+  sgp.setHumidity(getAbsoluteHumidity(TEMP, HUMID));
+
+  float VOC = sgp.TVOC;
+  float CO2 = sgp.eCO2;
+
+  // Leitura MICS
+  float CO = mics.readCO();
+  float NO2 = mics.readNO2();
+
+  // Leitura GUVA
+  float UV = guva.index();
+
+  // Leitura PMS5003
+  float PM1 = PMSdata.pm10_standard;
+  float PM25 = PMSdata.pm25_standard;
+  float PM10 = PMSdata.pm100_standard;
+    
+  /*
+  // Exibição dos resultados (ajustar conforme necessário)
+  Serial.println("\n=== Leitura do Ciclo ===");
+  Serial.print("Temperatura: "); Serial.println(avgTemp);
+  Serial.print("Umidade: "); Serial.println(avgHumid);
+  Serial.print("Ruído (dB): "); Serial.println(avgDB);
+  Serial.print("TVOC (ppb): "); Serial.println(avgTVOC);
+  Serial.print("eCO2 (ppm): "); Serial.println(avgCO2);
+  Serial.print("CO (µg/m³): "); Serial.println(ugCO);
+  Serial.print("NO2 (µg/m³): "); Serial.println(ugNO2);
+  Serial.print("UV Index: "); Serial.println(avgUV);
+  Serial.print("PM2.5: "); Serial.println(avgPM25);
+  Serial.print("PM10: "); Serial.println(avgPM100);
+  Serial.print("O3 (ppb): "); Serial.println(o3_ppb);
+  */
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverUMQ_RL);
+    http.addHeader("Content-Type", "application/json");
+
+    // Gerar json com os dados das leituras
+    DynamicJsonDocument doc(512);
+    doc["co"] = roundf(CO * 100) / 100.0f;
+    doc["no2"] = roundf(NO2 * 100) / 100.0f;
+    doc["voc"] = roundf(VOC * 100) / 100.0f;
+    doc["o3"] = roundf(O3 * 100) / 100.0f;
+    doc["co2"] = roundf(CO2 * 100) / 100.0f;
+    doc["pm1"] = roundf(PM1 * 100) / 100.0f;
+    doc["pm25"] = roundf(PM25 * 100) / 100.0f;
+    doc["pm10"] = roundf(PM10 * 100) / 100.0f;
+    doc["uv"] = roundf(UV * 100) / 100.0f;
+    doc["temperatura"] = roundf(TEMP * 100) / 100.0f;
+    doc["umidade"] = roundf(HUMID * 100) / 100.0f;
+    doc["ruido"] = roundf(DB * 100) / 100.0f;
+
+    String jsonPayload;
+    serializeJson(doc, jsonPayload);
+
+    int httMICS_PREsponseCode = http.POST(jsonPayload);
+    
+  if (httMICS_PREsponseCode > 0) {
+    Serial.print("Resposta HTTP: ");
+    Serial.println(httMICS_PREsponseCode);
+    String response = http.getString();
+    Serial.println(response);
+  } else {
+    Serial.print("Erro no POST: ");
+    Serial.println(httMICS_PREsponseCode);
+  }
+    
+  http.end();
+  }
+  delay(10000);
+}
+
+uint32_t getAbsoluteHumidity(float temperature, float humidity) {
+    // approximation formula from Sensirion SGP30 Driver Integration chapter 3.15
+    const float absoluteHumidity = 216.7f * ((humidity / 100.0f) * 6.112f * exp((17.62f * temperature) / (243.12f + temperature)) / (273.15f + temperature)); // [g/m^3]
+    const uint32_t absoluteHumidityScaled = static_cast<uint32_t>(1000.0f * absoluteHumidity); // [mg/m^3]
+    return absoluteHumidityScaled;
+}
+
+void calibrateSGP30(){
+  uint16_t TVOC_base, eCO2_base;
+  if (! sgp.getIAQBaseline(&eCO2_base, &TVOC_base)) {
+    Serial.println("Falha ao obter valores de Baseline do SGP30");
+    return;
+  }
+  //Serial.print("****Baseline values: eCO2: 0x"); Serial.print(eCO2_base, HEX);
+  //Serial.print(" & TVOC: 0x"); Serial.println(TVOC_base, HEX);
+
+}
+
+float readMicRMS(){
+  unsigned long startMillis = millis();
+  float peakToPeak = 0;
+  unsigned int signalMax = 0;
+  unsigned int signalMin = 4095;
+
+  // Amostra o sinal por 100 ms
+  while (millis() - startMillis < SAMPLEWINDOW) {
+    int sample = analogRead(MAX_OUT);
+    if (sample > signalMax) signalMax = sample;
+    if (sample < signalMin) signalMin = sample;
+  }
+
+  // Converte ADC para tensão RMS
+  float peakToPeakVoltage = (signalMax - signalMin) * (VREF / 4095.0);
+  float rmsVoltage = peakToPeakVoltage * 0.707; // Aproximação RMS para onda senoidal
+  return rmsVoltage;
+}
+
+float convertVoltageToDB(float m, float b, float voltageRMS){
+  return m*log10(voltageRMS) + b;
+}
