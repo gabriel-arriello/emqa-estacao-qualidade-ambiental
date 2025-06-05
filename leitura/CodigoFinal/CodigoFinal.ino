@@ -28,8 +28,6 @@ const char* serverUMQ_RL = "http://192.168.31.197:5000/dados";
 #define PMS_TXD2 17
 
 // Constantes
-#define MQ_RL 1000000
-#define VREF 3.3
 #define DHT_TYPE DHT22
 #define SAMPLEWINDOW 100
 
@@ -84,7 +82,6 @@ void loop() {
 
   // Leitura MQ131
   mq131.setEnv((int8_t)round(TEMP), (uint8_t)round(HUMID));
-
   float O3 = mq131.getO3(PPB);
 
   // Leitura MAX9814
@@ -92,7 +89,6 @@ void loop() {
 
   // Leitura SGP30
   sgp.setHumidity(getAbsoluteHumidity(TEMP, HUMID));
-
   float VOC = sgp.TVOC;
   float CO2 = sgp.eCO2;
 
@@ -196,7 +192,7 @@ float readMicRMS(){
   }
 
   // Converte ADC para tensão RMS
-  float peakToPeakVoltage = (signalMax - signalMin) * (VREF / 4095.0);
+  float peakToPeakVoltage = (signalMax - signalMin) * (3.3 / 4095.0);
   float rmsVoltage = peakToPeakVoltage * 0.707; // Aproximação RMS para onda senoidal
   return rmsVoltage;
 }
