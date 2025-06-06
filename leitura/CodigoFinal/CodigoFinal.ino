@@ -3,7 +3,7 @@
 #include <DHT.h>
 #include <GUVA_S12SD.h>
 #include <MICS4514.h>
-#include <PMS5003.h>
+#include <PMS5003_ESP.h>
 #include <MQ131.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -39,7 +39,7 @@ DHT dht(DHT_OUT, DHT_TYPE);
 GUVAS12SD guva(GUVA_OUT, 3.3);
 MQ131Class mq131(MQ_ANALOG, MQ_HEATER);
 MICS4514 mics(MICS_RED, MICS_NOX, MICS_PRE);
-PMS5003Data PMSdata;
+PMS5003_ESP pms(Serial2, PMS_RXD2, PMS_TXD2);
 
 // Definição das funcoes auxiliares
 uint32_t getAbsoluteHumidity(float temperature, float humidity);
@@ -49,17 +49,13 @@ float convertVoltageToDB(float m, float b, float voltageRMS);
 
 void setup() {
   Serial.begin(115200);
+  Serial.print("Inicialiazando sensores e pré-aquecimento...");
   Wire.begin(SGP_SDA, SGP_SCL);
   dht.begin();
-  Serial1.begin(9600, SERIAL_8N1, PMS_RXD2, PMS_TXD2);
-  while(!Serial || !Serial1){
-    delay(1000);
-  }
-
-  if (!sgp.begin()) {
-    Serial.println("SGP30 não encontrado!");
-    while (1);
-  }
+  pms.begin();
+  sgp.begin();
+  mics.preHeat();
+  mq131.begin();
 
   WiFi.begin(ssid, password);
   
@@ -69,9 +65,6 @@ void setup() {
   }
   Serial.println("\nConectado ao Wi-Fi!");
   
-  mics.preHeat();
-  
-  mq131.begin();
   delay(90000); // Esperar pré-aquecimento inicial
 }
 
@@ -100,25 +93,25 @@ void loop() {
   float UV = guva.index();
 
   // Leitura PMS5003
-  float PM1 = PMSdata.pm10_standard;
-  float PM25 = PMSdata.pm25_standard;
-  float PM10 = PMSdata.pm100_standard;
+  pms.update();
+  float PM1 = pms.readPM1_0();
+  float PM25 = pms.readPM2_5();
+  float PM10 = pms.readPM10();
     
-  /*
-  // Exibição dos resultados (ajustar conforme necessário)
+  // Exibição dos resultados
   Serial.println("\n=== Leitura do Ciclo ===");
-  Serial.print("Temperatura: "); Serial.println(avgTemp);
-  Serial.print("Umidade: "); Serial.println(avgHumid);
-  Serial.print("Ruído (dB): "); Serial.println(avgDB);
-  Serial.print("TVOC (ppb): "); Serial.println(avgTVOC);
-  Serial.print("eCO2 (ppm): "); Serial.println(avgCO2);
-  Serial.print("CO (µg/m³): "); Serial.println(ugCO);
-  Serial.print("NO2 (µg/m³): "); Serial.println(ugNO2);
-  Serial.print("UV Index: "); Serial.println(avgUV);
-  Serial.print("PM2.5: "); Serial.println(avgPM25);
-  Serial.print("PM10: "); Serial.println(avgPM100);
-  Serial.print("O3 (ppb): "); Serial.println(o3_ppb);
-  */
+  Serial.print("Temperatura: "); Serial.println(TEMP);
+  Serial.print("Umidade: "); Serial.println(HUMID);
+  Serial.print("Ruído (dB): "); Serial.println(DB);
+  Serial.print("TVOC (ppb): "); Serial.println(VOC);
+  Serial.print("eCO2 (ppm): "); Serial.println(CO2);
+  Serial.print("CO (µg/m³): "); Serial.println(CO);
+  Serial.print("NO2 (µg/m³): "); Serial.println(NO2);
+  Serial.print("UV Index: "); Serial.println(UV);
+  Serial.print("PM1.0: "); Serial.println(PM1);
+  Serial.print("PM2.5: "); Serial.println(PM25);
+  Serial.print("PM10: "); Serial.println(PM10);
+  Serial.print("O3 (ppb): "); Serial.println(O3);
 
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
