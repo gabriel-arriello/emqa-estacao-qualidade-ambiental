@@ -29,7 +29,7 @@ const char* serverUMQ_RL = "http://192.168.254.197:5000/dados";
 
 // Constantes
 #define DHT_TYPE DHT22
-#define SAMPLEWINDOW 100
+#define MAX_SAMPLEWINDOW 100
 
 // Variáveis globais
 
@@ -79,7 +79,7 @@ void loop() {
   float O3 = mq131.getO3(PPB);
 
   // Leitura MAX9814
-  float DB = convertVoltageToDB(1.9097, -187.0903, readMicRMS());
+  float DB = readMax(1.9097, -187.0903);
 
   // Leitura SGP30
   sgp.setHumidity(getAbsoluteHumidity(TEMP, HUMID));
@@ -175,36 +175,37 @@ uint32_t getAbsoluteHumidity(float temperature, float humidity) {
   return fixedHumidity;
 }
 
-void calibrateSGP30(){
-  uint16_t TVOC_base, eCO2_base;
-  if (! sgp.getIAQBaseline(&eCO2_base, &TVOC_base)) {
-    Serial.println("Falha ao obter valores de Baseline do SGP30");
-    return;
-  }
-  //Serial.print("****Baseline values: eCO2: 0x"); Serial.print(eCO2_base, HEX);
-  //Serial.print(" & TVOC: 0x"); Serial.println(TVOC_base, HEX);
-
-}
-
-float readMicRMS(){
+float readMax(float m, float b){
+  // Coletar sinal do microfone
   unsigned long startMillis = millis();
-  float peakToPeak = 0;
   unsigned int signalMax = 0;
-  unsigned int signalMin = 4095;
+  unsigned int signalMin = 4095; // ADC 12 bits ESP32
+  const double micSensitivity = 0.00631;
 
-  // Amostra o sinal por 100 ms
-  while (millis() - startMillis < SAMPLEWINDOW) {
+  while (millis() - startMillis < MAX_SAMPLEWINDOW) {
     int sample = analogRead(MAX_OUT);
-    if (sample > signalMax) signalMax = sample;
-    if (sample < signalMin) signalMin = sample;
+
+    if (sample < 4095) {
+      if (sample > signalMax) {
+        signalMax = sample;
+      }
+      if (sample < signalMin) {
+        signalMin = sample;
+      }
+    }
   }
 
-  // Converte ADC para tensão RMS
-  float peakToPeakVoltage = (signalMax - signalMin) * (3.3 / 4095.0);
-  float rmsVoltage = peakToPeakVoltage * 0.707; // Aproximação RMS para onda senoidal
-  return rmsVoltage;
-}
+  unsigned int peakToPeak = signalMax - signalMin;
 
-float convertVoltageToDB(float m, float b, float voltageRMS){
-  return m*log10(voltageRMS) + b;
+  // Converter para tensão (3.3V)
+  double volts = (peakToPeak * 3.3) / 4095.0;
+
+  // Convertendo para Volts RMS
+  double voltsRMS = volts * 0.5 * 0.707;
+
+  // Calcular dB SPL
+  double dB = 20.0 * log10(voltsRMS / micSensitivity) + 94.0;
+  dB = (dB * m) + b; // Aplicar ajustes
+
+  return dB;
 }
