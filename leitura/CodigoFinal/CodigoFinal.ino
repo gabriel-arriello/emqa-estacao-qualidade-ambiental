@@ -11,7 +11,7 @@
 
 const char* ssid = "gabriel";
 const char* password = "arriello";
-const char* serverUMQ_RL = "http://192.168.31.197:5000/dados";
+const char* serverUMQ_RL = "http://192.168.254.197:5000/dados";
 
 // Definições de pinos
 #define MQ_ANALOG 1
@@ -49,11 +49,12 @@ float convertVoltageToDB(float m, float b, float voltageRMS);
 
 void setup() {
   Serial.begin(115200);
-  Serial.print("Inicialiazando sensores e pré-aquecimento...");
+  Serial.println("Inicialiazando sensores e pré-aquecimento...");
   Wire.begin(SGP_SDA, SGP_SCL);
   dht.begin();
   pms.begin();
   sgp.begin();
+  sgp.IAQinit();
   mics.preHeat();
   mq131.begin();
 
@@ -65,7 +66,7 @@ void setup() {
   }
   Serial.println("\nConectado ao Wi-Fi!");
   
-  delay(90000); // Esperar pré-aquecimento inicial
+  delay(120000); // Esperar pré-aquecimento inicial
 }
 
 void loop() {
@@ -82,15 +83,18 @@ void loop() {
 
   // Leitura SGP30
   sgp.setHumidity(getAbsoluteHumidity(TEMP, HUMID));
-  float VOC = sgp.TVOC;
-  float CO2 = sgp.eCO2;
-
+  float VOC = 0;
+  float CO2 = 0;
+  if (sgp.IAQmeasure()) {
+    VOC = sgp.TVOC;
+    CO2 = sgp.eCO2;
+  }
   // Leitura MICS
   float CO = mics.readCO();
   float NO2 = mics.readNO2();
 
   // Leitura GUVA
-  float UV = guva.index();
+  float UV  = guva.index();
 
   // Leitura PMS5003
   pms.update();
@@ -154,10 +158,21 @@ void loop() {
 }
 
 uint32_t getAbsoluteHumidity(float temperature, float humidity) {
-    // approximation formula from Sensirion SGP30 Driver Integration chapter 3.15
-    const float absoluteHumidity = 216.7f * ((humidity / 100.0f) * 6.112f * exp((17.62f * temperature) / (243.12f + temperature)) / (273.15f + temperature)); // [g/m^3]
-    const uint32_t absoluteHumidityScaled = static_cast<uint32_t>(1000.0f * absoluteHumidity); // [mg/m^3]
-    return absoluteHumidityScaled;
+  // Verifica se os valores são válidos
+  if (isnan(temperature) || isnan(humidity)) {
+    return 0;
+  }
+
+  // Fórmula da umidade absoluta (dv) em g/m³
+  float absHumidity = 216.7f * (humidity / 100.0f) * 6.112f * 
+                      exp((17.62f * temperature) / (243.12f + temperature)) / 
+                      (273.15f + temperature);
+
+  // Converte g/m³ para formato fixo 8.8 em mg/m³ (1 g = 1000 mg)
+  // 8.8 significa: parte inteira << 8 | parte fracionária (em 256 passos)
+  uint32_t fixedHumidity = (uint32_t)(absHumidity * 256.0f);
+
+  return fixedHumidity;
 }
 
 void calibrateSGP30(){

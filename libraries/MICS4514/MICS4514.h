@@ -24,8 +24,8 @@ private:
     const float RLOAD_RED = 46500.0;
     const float RLOAD_NOX = 21800.0;
 
-    const float R0_RED = 80868.72;
-    const float R0_NOX = 11464.26;
+    const float R0_RED = 59705.41;
+    const float R0_NOX = 12654.88;
 
     // Funções auxiliares privadas (se precisar)
 };
