@@ -1,156 +1,113 @@
-# Arduino-MQ131-driver
-Arduino library for ozone gas sensor MQ131
+# MQ131 Ozone Sensor Library for ESP32
 
-[![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/ostaquet/Arduino-MQ131-driver.svg)](#releases)
-[![GitHub issues](https://img.shields.io/github/issues/ostaquet/Arduino-MQ131-driver.svg)](https://github.com/ostaquet/Arduino-MQ131-driver/issues)
+This library is an adaptation of [ostaquet's Arduino-MQ131-driver](https://github.com/ostaquet/Arduino-MQ131-driver) specifically optimized for ESP32 microcontrollers, featuring hardware modifications for improved compatibility and performance.
 
- This is a comprehensive Arduino library to obtain ozone (O3) concentration in the air with the Winsen MQ131 sensor. The library supports both versions of the sensor (low concentration and high concentration), the calibration, the control of the heater, the environmental adjustments (temperature and humidity) and the output of values in ppm (parts per million), ppb (parts per billion), mg/m3 and µg/m3.
+## Key Adaptations
+- **Transistor Replacement**: Uses IRLZ44N (3.3V compatible) instead of IRF840 (5V)
+- **Voltage Optimization**: Adjusted working voltage parameters for ESP32's 3.3V logic
+- **Precision Calibration**: Enhanced calibration routine with stability detection
+- **Environmental Compensation**: Automatic temperature/humidity corrections
 
-## To know before starting...
- * The MQ131 is a [semiconductor gas sensor](https://en.wikipedia.org/wiki/Gas_detector#Semiconductor) composed by a heater circuit and a sensor circuit.
- * Heater consumes at least 150 mA. So, __don't connect it directly on a pin of the Arduino__.
- * It is important to respect the pinout of the sensor. If you put Vcc on the sensor and not on the heater, __you could damage your sensor irreversibly.__ 
- * Sensor MQ131 requires minimum 48h preheat time before giving consistent results (also called "burn-in" time)
- * There are three different MQ131: 
-   * a black bakelite sensor for low concentration of ozone (with WO3 sensitive material)
-   * a blue bakelite sensor for low concentration of ozone (with SnO2 sensitive material)
-   * a metal sensor for high concentration of ozone.
- * This driver is made to control the "naked" [Winsen](https://www.winsen-sensor.com) MQ131. The driver is able to pilot the [low concentration WO3 version](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-low-concentration.pdf), the [low concentration Sn02 version](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-low-concentration-SnO2.pdf) and the [high concentration version](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-high-concentration.pdf).
- * To measure the air quality (e.g. pollution), it's better to use the low concentration MQ131 because the high concentration is not accurate enough for low concentration.
- 
-## How to install the library?
-The easiest way to install the library is to go to the Library manager of the Arduino IDE and install the library.
- 1. In the Arduino IDE, go into Menu _Tools_ -> _Manage Libraries..._
- 2. Search for _MQ131_
- 3. Install _MQ131 gas sensor by Olivier Staquet_
- 
-## Circuit
- * Heater is controlled by MOSFET N-channel via the control pin (on schema pin 2, yellow connector)
- * Result of the sensor is read through analog with RL of 1MΩ (on schema pin A0, green connector)
- 
-Remarks:
- * The MOSFET is a IRF840 but any N-channel MOSFET that can be controlled by 5V is OK.
- * The load resistance (RL) can be different than 1MΩ (tested also with 10kΩ) but don't forget to calibrate the R0 and time to heat.
+## Hardware Setup
+### Required Components
+- ESP32 development board
+- MQ131 ozone sensor (low/medium/high concentration version)
+- IRLZ44N MOSFET transistor
+- 10KΩ resistor
+- Breadboard and jumper wires
 
-![Breadboard schematics](extras/img/MQ131_bb.png)
+### Wiring Diagram
 
-![MQ131 pinout](extras/img/MQ131_pinout.png)
+```plaintext
+MQ131 Sensor ESP32 IRLZ44N Transistor
+  VCC ────┬── 3.3V
+          │
+  GND ────┼── GND
+          │
+  Heater ─┴── Gate ─── ESP32_PREHEAT_PIN
+          │
+Sense ── 10KΩ ─┴── Drain
+│
+└─── ESP32_ANALOG_PIN
+    ```
 
-![Schematics](extras/img/MQ131_schem.png)
 
-## Basic program to use your MQ131
-```
-#include "MQ131.h"
+## Installation
+1. Download the library as ZIP
+2. In Arduino IDE:  
+   `Sketch > Include Library > Add .ZIP Library...`
+3. Include in your project:
+   ```cpp
+   #include <MQ131.h>
+    ```
+   
+## Basic Usage
+
+```cpp
+#define PREHEAT_PIN 22   // ESP32 GPIO for heater control
+#define ANALOG_PIN  34   // ESP32 analog input pin
+
+MQ131Class MQ131(ANALOG_PIN, PREHEAT_PIN);
 
 void setup() {
   Serial.begin(115200);
-
-  // Init the sensor
-  // - Heater control on pin 2
-  // - Sensor analog read on pin A0
-  // - Model LOW_CONCENTRATION
-  // - Load resistance RL of 1MOhms (1000000 Ohms)
-  MQ131.begin(2,A0, LOW_CONCENTRATION, 1000000);  
-
-  Serial.println("Calibration in progress...");
-  
-  MQ131.calibrate();
-  
-  Serial.println("Calibration done!");
-  Serial.print("R0 = ");
-  Serial.print(MQ131.getR0());
-  Serial.println(" Ohms");
-  Serial.print("Time to heat = ");
-  Serial.print(MQ131.getTimeToRead());
-  Serial.println(" s");
+  MQ131.begin();
+  MQ131.setEnv(25, 60);  // Set temperature(°C) and humidity(%)
 }
 
 void loop() {
-  Serial.println("Sampling...");
-  MQ131.sample();
-  Serial.print("Concentration O3 : ");
-  Serial.print(MQ131.getO3(PPM));
-  Serial.println(" ppm");
-  Serial.print("Concentration O3 : ");
-  Serial.print(MQ131.getO3(PPB));
+  // Read ozone concentration in PPB
+  float ozone_ppb = MQ131.getO3(PPB);
+  
+  Serial.print("Ozone: ");
+  Serial.print(ozone_ppb);
   Serial.println(" ppb");
-  Serial.print("Concentration O3 : ");
-  Serial.print(MQ131.getO3(MG_M3));
-  Serial.println(" mg/m3");
-  Serial.print("Concentration O3 : ");
-  Serial.print(MQ131.getO3(UG_M3));
-  Serial.println(" ug/m3");
 
-  delay(60000);
+  delay(5000);
+}
+
+    ```
+Calibration Procedure
+
+    Power sensor in clean air environment
+
+    Run calibration command:
+```cpp
+void setup() {
+  // ... initialization code ...
+  MQ131.calibrate();  // 15-minute stabilization
 }
 ```
 
-The result gives us:
-```
-Calibration in progress...
-Calibration done!
-R0 = 1917.22 Ohms
-Time to heat = 80 s
-Sampling...
-Concentration O3 : 0.01 ppm
-Concentration O3 : 7.95 ppb
-Concentration O3 : 0.02 mg/m3
-Concentration O3 : 16.80 ug/m3
-```
+    Monitor serial output for calculated R0 value
 
-## Usage
-The driver has to be initialized with 4 parameters:
- * Pin to control the heater power (example: 2)
- * Pin to measure the analog output (example: A0)
- * Model of sensor `LOW_CONCENTRATION`, `SN_O2_LOW_CONCENTRATION` or `HIGH_CONCENTRATION` (example: `LOW_CONCENTRATION`)
- * Value of load resistance in Ohms (example: 1000000 Ohms)
-```
-MQ131.begin(2,A0, LOW_CONCENTRATION, 1000000);
-```
+    Update R0_MQ constant in MQ131.h with new value
 
-Before using the driver, it's better to calibrate it. You can do that through the function `calibrate()`. The best is to calibrate the sensor at 20°C and 65% of humidity in clean fresh air. If you need some log on the console, mention the serial in the function `begin()` (example by using the standard Serial: `MQ131.begin(2,A0, LOW_CONCENTRATION, 1000000, (Stream *)&Serial);`).
+Output Units
 
-The calibration adjusts 2 parameters:
- * The value of the base resistance (R0)
- * The time required to heat the sensor and get consistent readings (Time to read)
-```
-MQ131.calibrate();
-```
+Supported measurement units:
+Unit	Description
+PPM	Parts per million
+PPB	Parts per billion
+MG_M3	Milligrams per m³
+UG_M3	Micrograms per m³
+Key Notes
 
-Those calibration values are used for the usage of the sensor as long as the Arduino is not restarted. Nevertheless, you can get the values for your sensor through the getters:
-```
-MQ131.getR0();
-MQ131.getTimeToRead();
-```
+    Pre-heating: Sensor requires 2-minute warm-up for stable readings
 
-And set up the values in the initialization of your program through the setters:
-```
-MQ131.setR0(value);
-MQ131.setTimeToRead(value);
-```
+    Calibration: Mandatory after hardware changes or every 6 months
 
-In order to get the values from the sensor, you just start the process with the `sample()` function. **Please notice that the function locks the flow.** If you want to do additional processing during the heating/reading process, you should extend the class. The methods are protected and the driver can be extended easily.
-```
-MQ131.sample();
-```
+    Environment: Always set current temp/humidity for accurate readings
 
-The reading of the values is done through the `getO3()` function. Based on the parameter, you can ask to receive the result in ppm (`PPM`), ppb (`PPB`), mg/m3 (`MG_M3`) or µg/m3 (`UG_M3`).
-```
-MQ131.getO3(PPM);
-MQ131.getO3(PPB);
-MQ131.getO3(MG_M3);
-MQ131.getO3(UG_M3);
-```
+    Power: Use stable 3.3V power source (ESP32's 3.3V pin recommended)
 
-The sensor is sensible to environmental variation (temperature and humidity). If you want to have correct values, you should set the temperature and the humidity before the call to `getO3()` function with the function `setEnv()`. Temperature are in °C and humidity in %. The values should come from another sensor like the DHT22.
-```
-MQ131.setEnv(23, 70);
-```
+Technical Changes from Original
+Parameter	Original Value	ESP32 Adaptation
+Control Transistor	IRF840 (5V)	IRLZ44N (3.3V)
+Supply Voltage	5V	3.3V
+V_SUPPLY	5.0	3.26
+RLOAD_MQ	1,000,000 Ω	950,000 Ω
+Analog Resolution	10-bit (1024)	12-bit (4096)
+License
 
-
-## Links
- * [Calculation of sensitivity curves](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/Sensitivity_curves.xlsx)
- * [Datasheet MQ131 low concentration WO3 (black bakelite version)](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-low-concentration.pdf)
- * [Datasheet MQ131 low concentration SnO2 (blue bakelite version)](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-low-concentration-SnO2.pdf)
- * [Datasheet MQ131 high concentration (metal version)](https://github.com/ostaquet/Arduino-MQ131-driver/blob/master/extras/datasheet/MQ131-high-concentration.pdf)
+MIT License - Same as original library. See included LICENSE file.
