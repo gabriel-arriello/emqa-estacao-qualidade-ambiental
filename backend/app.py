@@ -42,10 +42,6 @@ def receber_dados():
             historico = json.load(f)
             historico.append(dados)
             
-            # Mantém apenas últimos 100 registros
-            if len(historico) > 100:
-                historico = historico[-100:]
-            
             f.seek(0)
             f.truncate()
             json.dump(historico, f, indent=4)

@@ -3,12 +3,8 @@
     <Card>
       <template #title>{{ nomeSensor }}</template>
       <template #content>
-<<<<<<< HEAD
         <div class="flex align-items-center gap-2 mb-4">
           <span class="text-lg font-medium">Última leitura: </span>
-=======
-        <div class="flex align-items-center gap-4 mb-4">
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
           <span class="text-6xl font-bold">{{ valorAtual }}</span>
           <span class="text-2xl">{{ unidade }}</span>
         </div>
@@ -49,11 +45,7 @@ export default {
   computed: {
     nomeSensor() {
       const nomes = {
-<<<<<<< HEAD
         // pm1: "Material Particulado 1.0 (PM1.0)",
-=======
-        pm1: "Material Particulado 1.0 (PM1.0)",
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         pm10: "Material Particulado 10.0 (PM10.0)",
         pm25: "Material Particulado 2.5 (PM2.5)",
         temperatura: "Temperatura",
@@ -70,29 +62,22 @@ export default {
     },
     unidade() {
       const unidades = {
-<<<<<<< HEAD
         // pm1: " µg/m³",
         pm10: " µg/m³",
         pm25: " µg/m³",
-=======
-        pm1: " pm1.0/10^-4 m³",
-        pm10: " pm10.0/10^-4 m³",
-        pm25: " pm2.5/10^-4 m³",
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         temperatura: " °C",
         umidade: " %",
         uv: " UV index",
         ruido: " dB",
         co: " ppm",
-        no2: " ppm",
+        no2: " µg/m³",
         voc: " ppb",
-        o3: " ppb",
+        o3: " µg/m³",
         co2: " ppm",
       };
       return unidades[this.sensorId] || "";
     },
     valorAtual() {
-<<<<<<< HEAD
       return this.historico[this.historico.length - 1]?.[this.sensorId] || "--";
     },
     chartData() {
@@ -102,23 +87,12 @@ export default {
 
       return {
         labels: recent.map(d =>
-=======
-      return this.historico[-1]?.[this.sensorId] || "--";
-    },
-    chartData() {
-      return {
-        labels: this.historico.map((d) =>
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
           new Date(d.timestamp).toLocaleTimeString()
         ),
         datasets: [
           {
             label: this.nomeSensor,
-<<<<<<< HEAD
             data: recent.map(d => d[this.sensorId]),
-=======
-            data: this.historico.map((d) => d[this.sensorId]),
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
             borderColor: "#4BC0C0",
             tension: 0.4,
             fill: false,
@@ -143,7 +117,6 @@ export default {
         const response = await axios.get("http://localhost:5000/historico");
         const novosDados = response.data;
 
-<<<<<<< HEAD
         // Atualiza o histórico com os novos dados
         this.historico = novosDados;
 
@@ -152,14 +125,6 @@ export default {
           if (this.$refs.chart && this.$refs.chart.chart) {
             this.$refs.chart.chart.update();
           }
-=======
-        // Adiciona os novos dados ao histórico (preservando os dados anteriores)
-        this.historico = novosDados;
-
-        this.$nextTick(() => {
-          // Aqui, você deve acessar o gráfico e adicionar os novos dados de maneira incremental
-          this.$refs.chart.chart.update(); // Atualiza o gráfico sem animação
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         });
       } catch (error) {
         console.error("Erro ao obter histórico:", error);
@@ -168,7 +133,6 @@ export default {
   },
   mounted() {
     this.fetchData();
-<<<<<<< HEAD
     this.pollingInterval = setInterval(this.fetchData, 10000); // Atualiza a cada 10s
   },
   beforeUnmount() {
@@ -176,12 +140,6 @@ export default {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
     }
-=======
-    this.pollingInterval = setInterval(this.fetchData, 5000); // Atualiza a cada 5s
-  },
-  beforeUnmount() {
-    clearInterval(this.pollingInterval);
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
   },
 };
 </script>
@@ -193,8 +151,4 @@ export default {
   margin: 0 auto;
   min-height: 100vh;
 }
-<<<<<<< HEAD
 </style>
-=======
-</style>
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114

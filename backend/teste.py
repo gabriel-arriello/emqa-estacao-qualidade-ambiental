@@ -32,11 +32,7 @@ def gerar_dados_aleatorios():
         "voc": random.randint(500, 2000),
         "o3": round(random.uniform(20.0, 100.0), 2),
         "co2": random.randint(300, 1000),
-<<<<<<< HEAD
         # "pm1": random.randint(0, 50),
-=======
-        "pm1": random.randint(0, 50),
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         "pm25": random.randint(0, 100),
         "pm10": random.randint(0, 150),
         "uv": random.randint(0, 12),
@@ -48,11 +44,7 @@ def gerar_dados_aleatorios():
 def enviar_dados_automaticamente():
     """Envia dados aleatórios periodicamente para o backend"""
     while True:
-<<<<<<< HEAD
         time.sleep(10)  # Intervalo de 10 segundos
-=======
-        time.sleep(5)  # Intervalo de 5 segundos
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         
         # Simula uma requisição POST com dados aleatórios
         with app.test_client() as client:

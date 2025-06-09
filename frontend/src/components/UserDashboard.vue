@@ -14,13 +14,13 @@
         <div class="main-label">Umidade</div>
       </div>
 
-      <div class="main-data-card" @click="openChart('iqar')">
+      <div class="main-data-card">
         <div class="main-value">{{ iqArAtual || "--" }}</div>
         <div class="main-label">IQAr</div>
       </div>
     </div>
 
-    <!-- Modal para gráficos -->
+    <!-- Modal para gráficos permaneçe apenas para temperatura/umidade -->
     <Dialog
       :visible="showChart"
       :modal="true"
@@ -46,22 +46,24 @@
       </template>
     </Dialog>
 
-    <!-- Tabela de IQAr -->
+    <!-- Tabela de Sensores Geral -->
     <table class="iqar-table">
       <thead>
         <tr>
           <th>Poluente</th>
           <th>Valor</th>
-          <th>IQAr</th>
+          <th>Unidade</th>
+          <th>Índice</th>
           <th>Classificação</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in poluentes" :key="p.nome">
-          <td>{{ p.nome }}</td>
-          <td>{{ p.valor }}</td>
-          <td>{{ p.iqar }}</td>
-          <td>{{ classificaIQAr(p.iqar) }}</td>
+        <tr v-for="item in tabelaSensores" :key="item.chave">
+          <td>{{ item.nome }}</td>
+          <td>{{ item.valor }}</td>
+          <td>{{ item.unidade }}</td>
+          <td>{{ item.indice }}</td>
+          <td>{{ item.classificacao }}</td>
         </tr>
       </tbody>
     </table>
@@ -79,7 +81,7 @@
           class="sensor-card-wrapper"
         >
           <Card
-            class="cursor-pointer sensor-card"
+            class="sensor-card clickable-card"
             @click="$router.push('/sensor/' + sensor.columName)"
           >
             <template #title>
@@ -87,15 +89,9 @@
             </template>
             <template #content>
               <div class="text-center">
-<<<<<<< HEAD
                 <span class="text-sm font-medium">Última leitura: </span>
-                <span class="text-4xl font-bold">{{ sensor.valor || "--" }}</span>&nbsp;<span class="text-xl">{{ sensor.unidade }}</span>
-=======
-                <span class="text-4xl font-bold">{{
-                  sensor.valor || "--"
-                }}</span>
-                <span class="text-xl">{{ sensor.unidade }}</span>
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
+                <span class="text-4xl font-bold">{{ sensor.valor || "--" }}</span>
+                &nbsp;<span class="text-xl">{{ sensor.unidade }}</span>
                 <Chart
                   type="line"
                   :data="getSensorChartData(sensor.columName)"
@@ -119,7 +115,6 @@ import Dialog from "primevue/dialog";
 import axios from "axios";
 
 // Faixas para cálculo do IQAr
-<<<<<<< HEAD
 const niveisIQAr = [
   { ini:   0, fin:  40 },
   { ini:  41, fin:  80 },
@@ -128,6 +123,7 @@ const niveisIQAr = [
   { ini: 201, fin: 400 },
 ];
 
+// Faixas de concentração dos poluentes para cálculo dos índices
 const faixasConcentracao = {
   pm10: [
     { cini:   0, cfin:  45 },
@@ -178,28 +174,53 @@ function calculaIQAr(poluente, valor) {
       // interpolação linear dentro do nível
       return Math.round(
         ini + ((fin - ini) / (cfin - cini)) * (valor - cini)
-=======
-const faixas = [
-  { ini: 0, fin: 40, cini: 0, cfin: 45 },
-  { ini: 41, fin: 80, cini: 46, cfin: 100 },
-  { ini: 81, fin: 120, cini: 101, cfin: 150 },
-  { ini: 121, fin: 200, cini: 151, cfin: 250 },
-  { ini: 201, fin: 400, cini: 251, cfin: 600 },
-];
-
-// Função para calcular o IQAr
-function calculaIQAr(valor, faixas) {
-  for (const faixa of faixas) {
-    if (valor >= faixa.cini && valor <= faixa.cfin) {
-      return Math.round(
-        faixa.ini +
-          ((faixa.fin - faixa.ini) / (faixa.cfin - faixa.cini)) *
-            (valor - faixa.cini)
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
       );
     }
   }
   return null;
+}
+
+// Funções para classificar índices baseado nas concentrações
+function classificaIQAr(iqar) {
+      if (!iqar) return "--";
+      if (iqar <= 40) return "Boa";
+      if (iqar <= 80) return "Moderada";
+      if (iqar <= 120) return "Ruim";
+      if (iqar <= 200) return "Muito Ruim";
+      return "Péssima";
+    }
+
+function classificaCO2(valor) {
+  if (valor <= 1000) return 'Ótima';
+  if (valor <= 2500) return 'Boa';
+  if (valor <= 5000) return 'Moderada';
+  if (valor <= 40000) return 'Ruim';
+  if (valor <= 100000) return 'Muito ruim';
+  return 'Péssima';
+}
+
+function classificaVOC(valor) {
+  if (valor <= 220) return 'Ótima';
+  if (valor <= 660) return 'Boa';
+  if (valor <= 1430) return 'Moderada';
+  if (valor <= 2200) return 'Ruim';
+  if (valor <= 3300) return 'Muito ruim';
+  return 'Péssima';
+}
+
+function classificaUV(valor) {
+  if (valor <= 2) return 'Boa';
+  if (valor <= 5) return 'Moderada';
+  if (valor <= 7) return 'Ruim';
+  if (valor <= 10) return 'Muito ruim';
+  return 'Péssima';
+}
+
+function classificaDB(valor) {
+  if (valor <= 80) return 'Boa';
+  if (valor <= 90) return 'Moderada';
+  if (valor <= 120) return 'Ruim';
+  return 'Muito ruim';
 }
 
 export default {
@@ -210,7 +231,6 @@ export default {
       chartSensor: null,
       chartTitle: "",
       chartData: null,
-<<<<<<< HEAD
       ordemSensores: [
         // "pm1",
         "pm25",
@@ -221,19 +241,6 @@ export default {
         "co2",
         "voc",
         "uv",
-=======
-      // Incluir CO2 e VOCs apenas nos gráficos secundários
-      ordemSensores: [
-        "uv",
-        "co",
-        "co2",
-        "no2",
-        "o3",
-        "voc",
-        "pm1",
-        "pm25",
-        "pm10",
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         "ruido",
       ],
       dados: {},
@@ -244,37 +251,53 @@ export default {
         animation: { duration: 0 },
         plugins: { legend: { display: false } },
         scales: {
-<<<<<<< HEAD
           x: { title: { display: true, text: "Tempo (hh-mm-ss)" } },
           y: { title: { display: true } },
-=======
-          y: { title: { display: true } },
-          x: { title: { display: true, text: "Tempo" } },
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         },
       },
       pollingInterval: null,
     };
   },
   computed: {
-<<<<<<< HEAD
-    poluentes() {
-      return [
-        { chave: "pm10", nome: "PM10.0", valor: this.dados.pm10 || 0 },
-        { chave: "pm25", nome: "PM2.5", valor: this.dados.pm25 || 0 },
-        { chave: "co",   nome: "CO",     valor: this.dados.co   || 0 },
-        { chave: "no2",  nome: "NO2",    valor: this.dados.no2  || 0 },
-        { chave: "o3",   nome: "O3",     valor: this.dados.o3   || 0 },
-      ].map(p => ({
-        ...p,
-        iqar: calculaIQAr(p.chave, p.valor)
-      }));
-    },
-    iqArAtual() {
-      const valores = this.poluentes
-        .map(p => p.iqar)
-        .filter(i => i !== null);
-      return valores.length ? Math.max(...valores) : null;
+    tabelaSensores() {
+      return this.ordemSensores.map(chave => {
+        const valor = this.dados[chave] != null ? this.dados[chave] : "--";
+        const unidade = this.getUnidade(chave) || "";
+        let indice = '-';
+        let classificacao = '-';
+
+        switch (chave) {
+          case 'co2': {
+            indice = 'CO2 levels';
+            classificacao = valor !== "--" ? classificaCO2(valor) : '-';
+            break;
+          }
+          case 'voc': {
+            indice = "VOC's levels";
+            classificacao = valor !== "--" ? classificaVOC(valor) : '-';
+            break;
+          }
+          case 'uv': {
+            indice = 'UV levels';
+            classificacao = valor !== "--" ? classificaUV(valor) : '-';
+            break;
+          }
+          case 'ruido': {
+            indice = 'dB levels';
+            classificacao = valor !== "--" ? classificaDB(valor) : '-';
+            break;
+          }
+          default: {
+            const iqar = calculaIQAr(chave, valor);
+            if (iqar != null) {
+              indice = 'IQAr';
+              classificacao = classificaIQAr(iqar);
+            }
+          }
+        }
+
+        return { chave, nome: this.formatSensorName(chave), valor, unidade, indice, classificacao };
+      });
     },
     sensoresFormatados() {
       return this.ordemSensores
@@ -284,46 +307,6 @@ export default {
           valor: this.dados[nome],
           unidade: this.getUnidade(nome),
         }))
-=======
-    iqArAtual() {
-      // Poluentes considerados no cálculo do IQAr (oficiais)
-      const poluentes = ["pm1", "pm10", "pm25", "co", "no2", "o3"];
-
-      // Encontra o maior IQAr entre os poluentes
-      const iqars = poluentes
-        .map((p) => {
-          const valor = this.dados[p] || 0;
-          return calculaIQAr(valor, faixas);
-        })
-        .filter((v) => v !== null);
-
-      return iqars.length ? Math.max(...iqars) : null;
-    },
-    poluentes() {
-      // Apenas poluentes oficiais na tabela
-      return [
-        { chave: "pm1", nome: "PM1.0", valor: this.dados.pm1 || 0 },
-        { chave: "pm10", nome: "PM10.0", valor: this.dados.pm10 || 0 },
-        { chave: "pm25", nome: "PM2.5", valor: this.dados.pm25 || 0 },
-        { chave: "co", nome: "CO", valor: this.dados.co || 0 },
-        { chave: "no2", nome: "NO2", valor: this.dados.no2 || 0 },
-        { chave: "o3", nome: "O3", valor: this.dados.o3 || 0 },
-      ].map((p) => ({
-        ...p,
-        iqar: calculaIQAr(p.valor, faixas),
-      }));
-    },
-    sensoresFormatados() {
-      return this.ordemSensores
-        .map((nome) => {
-          return {
-            nome: this.formatSensorName(nome),
-            columName: nome,
-            valor: this.dados[nome],
-            unidade: this.getUnidade(nome),
-          };
-        })
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         .filter((sensor) => sensor.valor !== undefined);
     },
     linhasDeSensores() {
@@ -333,6 +316,16 @@ export default {
       }
       return linhas;
     },
+    iqArAtual() {
+      // recalcula IQAr atual mesmo sem gráfico
+      const valores = this.ordemSensores
+        .map(chave => {
+          const iqar = calculaIQAr(chave, this.dados[chave] || 0);
+          return iqar;
+        })
+        .filter(v => v != null);
+      return valores.length ? Math.max(...valores) : null;
+    }
   },
   methods: {
     openChart(sensor) {
@@ -341,21 +334,9 @@ export default {
       this.prepareChartData();
       this.showChart = true;
     },
-    classificaIQAr(iqar) {
-      if (!iqar) return "--";
-      if (iqar <= 40) return "Boa";
-      if (iqar <= 80) return "Moderada";
-      if (iqar <= 120) return "Ruim";
-      if (iqar <= 200) return "Muito Ruim";
-      return "Péssima";
-    },
     formatSensorName(name) {
       const names = {
-<<<<<<< HEAD
         //pm1: "Material Particulado 1.0 (PM1.0)",
-=======
-        pm1: "Material Particulado 1.0 (PM1.0)",
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         pm10: "Material Particulado 10.0 (PM10.0)",
         pm25: "Material Particulado 2.5 (PM2.5)",
         temperatura: "Temperatura",
@@ -373,7 +354,6 @@ export default {
     },
     getUnidade(name) {
       const unidades = {
-<<<<<<< HEAD
         //pm1: "µg/m³",
         pm10: "µg/m³",
         pm25: "µg/m³",
@@ -382,29 +362,14 @@ export default {
         uv: "UV index",
         ruido: "dB",
         co: "ppm",
-        no2: "ppm",
+        no2: "µg/m³",
         voc: "ppb",
-        o3: "ppb",
+        o3: "µg/m³",
         co2: "ppm",
-=======
-        pm1: " pm1.0/10^-4 m³",
-        pm10: " pm10.0/10^-4 m³",
-        pm25: " pm2.5/10^-4 m³",
-        temperatura: " °C",
-        umidade: " %",
-        uv: " UV index",
-        ruido: " dB",
-        co: " ppm",
-        no2: " ppm",
-        voc: " ppb",
-        o3: " ppb",
-        co2: " ppm",
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
       };
       return unidades[name] || "";
     },
     getSensorChartData(sensorName) {
-<<<<<<< HEAD
       const maxPoints = 10;
       // Pega só os últimos oito registros
       const recent = this.historico.slice(-maxPoints);
@@ -414,12 +379,6 @@ export default {
         new Date(d.timestamp).toLocaleTimeString()
       );
       const data = recent.map(d => d[sensorName]);
-=======
-      const labels = this.historico.map((d) =>
-        new Date(d.timestamp).toLocaleTimeString()
-      );
-      const data = this.historico.map((d) => d[sensorName]);
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
 
       return {
         labels,
@@ -433,7 +392,6 @@ export default {
         ],
       };
     },
-<<<<<<< HEAD
     
     // Novo método para opções dinâmicas
     getChartOptions(sensorName) {
@@ -464,28 +422,15 @@ export default {
     },
     prepareChartData() {
       if (this.chartSensor === "iqar") {
-=======
-    prepareChartData() {
-      if (this.chartSensor === "iqar") {
-        // Calcular IQAr histórico
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         const labels = this.historico.map((d) =>
           new Date(d.timestamp).toLocaleTimeString()
         );
 
         const data = this.historico.map((d) => {
-<<<<<<< HEAD
           const poluentes = ["pm1", "pm10", "pm25", "co", "no2", "o3"];
           const valores = poluentes.map((p) => d[p] || 0);
           const maxValor = Math.max(...valores);
           return calculaIQAr(maxValor, faixasConcentracao);
-=======
-          // Considerar apenas poluentes oficiais para cálculo
-          const poluentes = ["pm1", "pm10", "pm25", "co", "no2", "o3"];
-          const valores = poluentes.map((p) => d[p] || 0);
-          const maxValor = Math.max(...valores);
-          return calculaIQAr(maxValor, faixas);
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         });
 
         this.chartData = {
@@ -500,14 +445,9 @@ export default {
             },
           ],
         };
-<<<<<<< HEAD
 
         this.chartOptions = this.getChartOptions("iqar");
       } else {
-=======
-      } else {
-        // Dados normais de sensor
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         const labels = this.historico.map((d) =>
           new Date(d.timestamp).toLocaleTimeString()
         );
@@ -525,10 +465,6 @@ export default {
             },
           ],
         };
-<<<<<<< HEAD
-        this.chartOptions = this.getChartOptions(this.chartSensor);
-      }
-=======
       }
 
       // Configurar unidade no eixo Y
@@ -552,7 +488,6 @@ export default {
           },
         },
       };
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
     },
     async fetchData() {
       try {
@@ -564,10 +499,6 @@ export default {
         this.dados = current.data;
         this.historico = history.data;
 
-<<<<<<< HEAD
-=======
-        // Se o modal estiver aberto, atualize o gráfico
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
         if (this.showChart) {
           this.prepareChartData();
           this.$nextTick(() => {
@@ -592,20 +523,20 @@ export default {
 </script>
 
 <style scoped>
+/* Layout geral */
 .dashboard {
-  padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 1rem;
 }
 
 .text-center {
   text-align: center;
 }
 
-/* Layout dos cards principais */
+/* Cards principais */
 .main-data-row {
   display: flex;
-  justify-content: space-between;
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -616,9 +547,9 @@ export default {
   background-color: #f8f9fa;
   border-radius: 8px;
   text-align: center;
-  cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .main-data-card:hover {
@@ -637,14 +568,14 @@ export default {
   color: #495057;
 }
 
-/* Tabela de IQAr */
+/* Tabela de Sensores Geral */
 .iqar-table {
   width: 100%;
-  border-collapse: collapse;
   margin-bottom: 2rem;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-collapse: collapse;
+  background-color: #fff;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -664,7 +595,7 @@ export default {
   border-bottom: none;
 }
 
-/* Sensores secundários */
+/* Cards dos sensores secundários */
 .sensor-rows {
   display: flex;
   flex-direction: column;
@@ -682,24 +613,16 @@ export default {
 
 .sensor-card {
   height: 100%;
-<<<<<<< HEAD
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
-.sensor-card-title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-.sensor-chart {
-  height: 160px;
-  margin-top: 1rem;
-}
-
-.chart-container {
-  padding: 1rem;
-=======
->>>>>>> b959a37200b6642bc8e22dc3e6b520aa69b55114
+.sensor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .sensor-card-title {
