@@ -9,9 +9,9 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "HUAWEI-2.4G-Pez3";
-const char* password = "qqqjAQZJ";
-const char* serverUMQ_RL = "http://192.168.18.13:5000/dados";
+const char* ssid = "gabriel";
+const char* password = "arriello";
+const char* serverUMQ_RL = "http://192.168.254.197:5000/dados";
 
 // Definições de pinos
 #define MQ_ANALOG 1
@@ -49,16 +49,14 @@ MICS4514 mics(MICS_RED, MICS_NOX, MICS_PRE);
 
 // Definição das funções auxiliares
 uint32_t getAbsoluteHumidity(float temperature, float humidity);
-float readDBWindow();             // Função para ler uma janela de dB
-float convertVoltageToDB(float voltsRMS);
+float readDBWindow();
+float convertNO2_ppm_to_ugm3(float ppm_NO2, float temperature = 25.0, float pressure = 1013.25);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Inicializando sensores e pré-aquecimento...");
 
-  // Inicializar Serial2 para PMS5003
   Serial2.begin(9600, SERIAL_8N1, PMS_RXD2, PMS_TXD2);
-
   Wire.begin(SGP_SDA, SGP_SCL);
   dht.begin();
   sgp.begin();
@@ -74,7 +72,7 @@ void setup() {
   }
   Serial.println("\nConectado ao Wi-Fi!");
 
-  delay(120000); // Esperar pré-aquecimento inicial
+  delay(90000); // Esperar pré-aquecimento inicial
   cycleStartTime = millis();
 }
 
@@ -111,7 +109,7 @@ void loop() {
 
     // Leitura MQ131
     mq131.setEnv((int8_t)round(TEMP), (uint8_t)round(HUMID));
-    float O3 = mq131.getO3(PPB);
+    float O3 = mq131.getO3(UG_M3);
 
     // Leitura SGP30
     sgp.setHumidity(getAbsoluteHumidity(TEMP, HUMID));
@@ -124,13 +122,13 @@ void loop() {
 
     // Leitura MICS
     float CO = mics.readCO();
-    float NO2 = mics.readNO2();
+    float NO2 = convertNO2_ppm_to_ugm3(mics.readNO2(), TEMP);
 
     // Leitura GUVA
     float UV  = guva.index();
 
     // Leitura PMS5003 (últimos valores lidos)
-    float PM1 = pmsData.pm10_standard;
+    //float PM1 = pmsData.pm10_standard;
     float PM25 = pmsData.pm25_standard;
     float PM10 = pmsData.pm100_standard;
 
@@ -144,10 +142,10 @@ void loop() {
     Serial.print("CO (µg/m³): "); Serial.println(CO);
     Serial.print("NO2 (µg/m³): "); Serial.println(NO2);
     Serial.print("UV Index: "); Serial.println(UV);
-    Serial.print("PM1.0: "); Serial.println(PM1);
+    //Serial.print("PM1.0: "); Serial.println(PM1);
     Serial.print("PM2.5: "); Serial.println(PM25);
     Serial.print("PM10: "); Serial.println(PM10);
-    Serial.print("O3 (ppb): "); Serial.println(O3);
+    Serial.print("O3 (µg/m³): "); Serial.println(O3);
 
     // Envio para servidor
     if (WiFi.status() == WL_CONNECTED) {
@@ -161,7 +159,7 @@ void loop() {
       doc["voc"] = roundf(VOC * 100) / 100.0f;
       doc["o3"] = roundf(O3 * 100) / 100.0f;
       doc["co2"] = roundf(CO2 * 100) / 100.0f;
-      doc["pm1"] = roundf(PM1 * 100) / 100.0f;
+      //doc["pm1"] = roundf(PM1 * 100) / 100.0f;
       doc["pm25"] = roundf(PM25 * 100) / 100.0f;
       doc["pm10"] = roundf(PM10 * 100) / 100.0f;
       doc["uv"] = roundf(UV * 100) / 100.0f;
@@ -220,6 +218,7 @@ float readDBWindow() {
   return dB;
 }
 
+// Função que calcula umidade absoluta
 uint32_t getAbsoluteHumidity(float temperature, float humidity) {
   if (isnan(temperature) || isnan(humidity)) return 0;
 
@@ -228,4 +227,16 @@ uint32_t getAbsoluteHumidity(float temperature, float humidity) {
   (273.15f + temperature);
 
   return (uint32_t)(absHumidity * 256.0f);
+}
+
+// Função que converte o NO2 de ppm para ug/m³
+float convertNO2_ppm_to_ugm3(float ppm_NO2, float temperature, float pressure) {
+  // Fórmula: µg/m³ = ppm × (molecular weight / molar volume) × 1000
+  // Molecular weight of NO2 = 46.0055 g/mol
+  // Molar volume at 25°C and 1 atm = 24.465 L/mol
+
+  // Ajuste para condições reais (opcional)
+  float molar_volume = 24.465 * (pressure / 1013.25) * (298.15 / (temperature + 273.15));
+
+  return ppm_NO2 * (46.0055 / molar_volume) * 1000;
 }

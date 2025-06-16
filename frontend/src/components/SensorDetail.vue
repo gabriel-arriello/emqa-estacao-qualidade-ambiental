@@ -86,13 +86,11 @@ export default {
       const recent = this.historico.slice(-maxPoints);
 
       return {
-        labels: recent.map(d =>
-          new Date(d.timestamp).toLocaleTimeString()
-        ),
+        labels: recent.map((d) => new Date(d.timestamp).toLocaleTimeString()),
         datasets: [
           {
             label: this.nomeSensor,
-            data: recent.map(d => d[this.sensorId]),
+            data: recent.map((d) => d[this.sensorId]),
             borderColor: "#4BC0C0",
             tension: 0.4,
             fill: false,
@@ -114,7 +112,9 @@ export default {
   methods: {
     async fetchData() {
       try {
-        const response = await axios.get("http://localhost:5000/historico");
+        const response = await axios.get(
+          "http://192.168.100.2:5000/historico"
+        );
         const novosDados = response.data;
 
         // Atualiza o histórico com os novos dados

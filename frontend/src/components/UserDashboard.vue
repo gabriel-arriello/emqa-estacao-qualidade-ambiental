@@ -90,8 +90,10 @@
             <template #content>
               <div class="text-center">
                 <span class="text-sm font-medium">Última leitura: </span>
-                <span class="text-4xl font-bold">{{ sensor.valor || "--" }}</span>
-                &nbsp;<span class="text-xl">{{ sensor.unidade }}</span>
+                <span class="text-4xl font-bold">{{
+                  sensor.valor || "--"
+                }}</span>
+                <span class="text-xl">{{ sensor.unidade }}</span>
                 <Chart
                   type="line"
                   :data="getSensorChartData(sensor.columName)"
@@ -116,9 +118,9 @@ import axios from "axios";
 
 // Faixas para cálculo do IQAr
 const niveisIQAr = [
-  { ini:   0, fin:  40 },
-  { ini:  41, fin:  80 },
-  { ini:  81, fin: 120 },
+  { ini: 0, fin: 40 },
+  { ini: 41, fin: 80 },
+  { ini: 81, fin: 120 },
   { ini: 121, fin: 200 },
   { ini: 201, fin: 400 },
 ];
@@ -126,39 +128,39 @@ const niveisIQAr = [
 // Faixas de concentração dos poluentes para cálculo dos índices
 const faixasConcentracao = {
   pm10: [
-    { cini:   0, cfin:  45 },
-    { cini:  46, cfin: 100 },
+    { cini: 0, cfin: 45 },
+    { cini: 46, cfin: 100 },
     { cini: 101, cfin: 150 },
     { cini: 151, cfin: 250 },
     { cini: 251, cfin: 600 },
   ],
   pm25: [
-    { cini:   0,  cfin:  15 },
-    { cini:  16,  cfin:  50 },
-    { cini:  51,  cfin:  75 },
-    { cini:  76,  cfin: 125 },
-    { cini: 126,  cfin: 300 },
+    { cini: 0, cfin: 15 },
+    { cini: 16, cfin: 50 },
+    { cini: 51, cfin: 75 },
+    { cini: 76, cfin: 125 },
+    { cini: 126, cfin: 300 },
   ],
   o3: [
-    { cini:   0,  cfin: 100 },
-    { cini: 101,  cfin: 130 },
-    { cini: 131,  cfin: 160 },
-    { cini: 161,  cfin: 200 },
-    { cini: 201,  cfin: 800 },
+    { cini: 0, cfin: 100 },
+    { cini: 101, cfin: 130 },
+    { cini: 131, cfin: 160 },
+    { cini: 161, cfin: 200 },
+    { cini: 201, cfin: 800 },
   ],
   co: [
-    { cini:   0,  cfin:   9 },
-    { cini:  10,  cfin:  11 },
-    { cini:  12,  cfin:  13 },
-    { cini:  14,  cfin:  15 },
-    { cini:  16,  cfin:  50 },
+    { cini: 0, cfin: 9 },
+    { cini: 10, cfin: 11 },
+    { cini: 12, cfin: 13 },
+    { cini: 14, cfin: 15 },
+    { cini: 16, cfin: 50 },
   ],
   no2: [
-    { cini:   0,   cfin: 200 },
-    { cini: 201,   cfin: 240 },
-    { cini: 241,   cfin: 320 },
-    { cini: 321,   cfin:1130 },
-    { cini:1131,   cfin:3750 },
+    { cini: 0, cfin: 200 },
+    { cini: 201, cfin: 240 },
+    { cini: 241, cfin: 320 },
+    { cini: 321, cfin: 1130 },
+    { cini: 1131, cfin: 3750 },
   ],
 };
 
@@ -172,9 +174,7 @@ function calculaIQAr(poluente, valor) {
     if (valor >= cini && valor <= cfin) {
       const { ini, fin } = niveisIQAr[i];
       // interpolação linear dentro do nível
-      return Math.round(
-        ini + ((fin - ini) / (cfin - cini)) * (valor - cini)
-      );
+      return Math.round(ini + ((fin - ini) / (cfin - cini)) * (valor - cini));
     }
   }
   return null;
@@ -182,45 +182,45 @@ function calculaIQAr(poluente, valor) {
 
 // Funções para classificar índices baseado nas concentrações
 function classificaIQAr(iqar) {
-      if (!iqar) return "--";
-      if (iqar <= 40) return "Boa";
-      if (iqar <= 80) return "Moderada";
-      if (iqar <= 120) return "Ruim";
-      if (iqar <= 200) return "Muito Ruim";
-      return "Péssima";
-    }
+  if (!iqar) return "--";
+  if (iqar <= 40) return "Boa";
+  if (iqar <= 80) return "Moderada";
+  if (iqar <= 120) return "Ruim";
+  if (iqar <= 200) return "Muito Ruim";
+  return "Péssima";
+}
 
 function classificaCO2(valor) {
-  if (valor <= 1000) return 'Ótima';
-  if (valor <= 2500) return 'Boa';
-  if (valor <= 5000) return 'Moderada';
-  if (valor <= 40000) return 'Ruim';
-  if (valor <= 100000) return 'Muito ruim';
-  return 'Péssima';
+  if (valor <= 1000) return "Ótima";
+  if (valor <= 2500) return "Boa";
+  if (valor <= 5000) return "Moderada";
+  if (valor <= 40000) return "Ruim";
+  if (valor <= 100000) return "Muito ruim";
+  return "Péssima";
 }
 
 function classificaVOC(valor) {
-  if (valor <= 220) return 'Ótima';
-  if (valor <= 660) return 'Boa';
-  if (valor <= 1430) return 'Moderada';
-  if (valor <= 2200) return 'Ruim';
-  if (valor <= 3300) return 'Muito ruim';
-  return 'Péssima';
+  if (valor <= 220) return "Ótima";
+  if (valor <= 660) return "Boa";
+  if (valor <= 1430) return "Moderada";
+  if (valor <= 2200) return "Ruim";
+  if (valor <= 3300) return "Muito ruim";
+  return "Péssima";
 }
 
 function classificaUV(valor) {
-  if (valor <= 2) return 'Boa';
-  if (valor <= 5) return 'Moderada';
-  if (valor <= 7) return 'Ruim';
-  if (valor <= 10) return 'Muito ruim';
-  return 'Péssima';
+  if (valor <= 2) return "Boa";
+  if (valor <= 5) return "Moderada";
+  if (valor <= 7) return "Ruim";
+  if (valor <= 10) return "Muito ruim";
+  return "Péssima";
 }
 
 function classificaDB(valor) {
-  if (valor <= 80) return 'Boa';
-  if (valor <= 90) return 'Moderada';
-  if (valor <= 120) return 'Ruim';
-  return 'Muito ruim';
+  if (valor <= 80) return "Boa";
+  if (valor <= 90) return "Moderada";
+  if (valor <= 120) return "Ruim";
+  return "Muito ruim";
 }
 
 export default {
@@ -260,43 +260,50 @@ export default {
   },
   computed: {
     tabelaSensores() {
-      return this.ordemSensores.map(chave => {
+      return this.ordemSensores.map((chave) => {
         const valor = this.dados[chave] != null ? this.dados[chave] : "--";
         const unidade = this.getUnidade(chave) || "";
-        let indice = '-';
-        let classificacao = '-';
+        let indice = "-";
+        let classificacao = "-";
 
         switch (chave) {
-          case 'co2': {
-            indice = 'CO2 levels';
-            classificacao = valor !== "--" ? classificaCO2(valor) : '-';
+          case "co2": {
+            indice = "CO2 levels";
+            classificacao = valor !== "--" ? classificaCO2(valor) : "-";
             break;
           }
-          case 'voc': {
+          case "voc": {
             indice = "VOC's levels";
-            classificacao = valor !== "--" ? classificaVOC(valor) : '-';
+            classificacao = valor !== "--" ? classificaVOC(valor) : "-";
             break;
           }
-          case 'uv': {
-            indice = 'UV levels';
-            classificacao = valor !== "--" ? classificaUV(valor) : '-';
+          case "uv": {
+            indice = "UV levels";
+            classificacao = valor !== "--" ? classificaUV(valor) : "-";
             break;
           }
-          case 'ruido': {
-            indice = 'dB levels';
-            classificacao = valor !== "--" ? classificaDB(valor) : '-';
+          case "ruido": {
+            indice = "dB levels";
+            classificacao = valor !== "--" ? classificaDB(valor) : "-";
             break;
           }
           default: {
             const iqar = calculaIQAr(chave, valor);
             if (iqar != null) {
-              indice = 'IQAr';
+              indice = "IQAr";
               classificacao = classificaIQAr(iqar);
             }
           }
         }
 
-        return { chave, nome: this.formatSensorName(chave), valor, unidade, indice, classificacao };
+        return {
+          chave,
+          nome: this.formatSensorName(chave),
+          valor,
+          unidade,
+          indice,
+          classificacao,
+        };
       });
     },
     sensoresFormatados() {
@@ -319,13 +326,13 @@ export default {
     iqArAtual() {
       // recalcula IQAr atual mesmo sem gráfico
       const valores = this.ordemSensores
-        .map(chave => {
+        .map((chave) => {
           const iqar = calculaIQAr(chave, this.dados[chave] || 0);
           return iqar;
         })
-        .filter(v => v != null);
+        .filter((v) => v != null);
       return valores.length ? Math.max(...valores) : null;
-    }
+    },
   },
   methods: {
     openChart(sensor) {
@@ -355,17 +362,17 @@ export default {
     getUnidade(name) {
       const unidades = {
         //pm1: "µg/m³",
-        pm10: "µg/m³",
-        pm25: "µg/m³",
-        temperatura: "°C",
-        umidade: "%",
-        uv: "UV index",
-        ruido: "dB",
-        co: "ppm",
-        no2: "µg/m³",
-        voc: "ppb",
-        o3: "µg/m³",
-        co2: "ppm",
+        pm10: " µg/m³",
+        pm25: " µg/m³",
+        temperatura: " °C",
+        umidade: " %",
+        uv: " UV index",
+        ruido: " dB",
+        co: " ppm",
+        no2: " µg/m³",
+        voc: " ppb",
+        o3: " µg/m³",
+        co2: " ppm",
       };
       return unidades[name] || "";
     },
@@ -375,10 +382,10 @@ export default {
       const recent = this.historico.slice(-maxPoints);
 
       // Extrai rótulos e valores
-      const labels = recent.map(d =>
+      const labels = recent.map((d) =>
         new Date(d.timestamp).toLocaleTimeString()
       );
-      const data = recent.map(d => d[sensorName]);
+      const data = recent.map((d) => d[sensorName]);
 
       return {
         labels,
@@ -392,7 +399,7 @@ export default {
         ],
       };
     },
-    
+
     // Novo método para opções dinâmicas
     getChartOptions(sensorName) {
       const base = {
