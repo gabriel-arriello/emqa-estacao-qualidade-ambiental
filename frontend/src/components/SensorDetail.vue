@@ -113,7 +113,7 @@ export default {
     async fetchData() {
       try {
         const response = await axios.get(
-          "http://192.168.100.2:5000/historico"
+          "http://192.168.196.197:5000/historico"
         );
         const novosDados = response.data;
 

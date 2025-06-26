@@ -5,17 +5,17 @@
     <!-- Cards principais -->
     <div class="main-data-row">
       <div class="main-data-card" @click="openChart('temperatura')">
-        <div class="main-value">{{ dados.temperatura || "--" }} °C</div>
+        <div class="main-value">{{ dados.temperatura }} °C</div>
         <div class="main-label">Temperatura</div>
       </div>
 
       <div class="main-data-card" @click="openChart('umidade')">
-        <div class="main-value">{{ dados.umidade || "--" }} %</div>
+        <div class="main-value">{{ dados.umidade }} %</div>
         <div class="main-label">Umidade</div>
       </div>
 
       <div class="main-data-card">
-        <div class="main-value">{{ iqArAtual || "--" }}</div>
+        <div class="main-value">{{ iqArAtual }}</div>
         <div class="main-label">IQAr</div>
       </div>
     </div>
@@ -91,7 +91,7 @@
               <div class="text-center">
                 <span class="text-sm font-medium">Última leitura: </span>
                 <span class="text-4xl font-bold">{{
-                  sensor.valor || "--"
+                  sensor.valor
                 }}</span>
                 <span class="text-xl">{{ sensor.unidade }}</span>
                 <Chart
@@ -261,7 +261,7 @@ export default {
   computed: {
     tabelaSensores() {
       return this.ordemSensores.map((chave) => {
-        const valor = this.dados[chave] != null ? this.dados[chave] : "--";
+        const valor = this.dados[chave];
         const unidade = this.getUnidade(chave) || "";
         let indice = "-";
         let classificacao = "-";
@@ -269,30 +269,28 @@ export default {
         switch (chave) {
           case "co2": {
             indice = "CO2 levels";
-            classificacao = valor !== "--" ? classificaCO2(valor) : "-";
+            classificacao = classificaCO2(valor);
             break;
           }
           case "voc": {
             indice = "VOC's levels";
-            classificacao = valor !== "--" ? classificaVOC(valor) : "-";
+            classificacao = classificaVOC(valor);
             break;
           }
           case "uv": {
             indice = "UV levels";
-            classificacao = valor !== "--" ? classificaUV(valor) : "-";
+            classificacao = classificaUV(valor)
             break;
           }
           case "ruido": {
             indice = "dB levels";
-            classificacao = valor !== "--" ? classificaDB(valor) : "-";
+            classificacao = classificaDB(valor);
             break;
           }
           default: {
             const iqar = calculaIQAr(chave, valor);
-            if (iqar != null) {
-              indice = "IQAr";
-              classificacao = classificaIQAr(iqar);
-            }
+            indice = "IQAr";
+            classificacao = classificaIQAr(iqar);
           }
         }
 
@@ -499,8 +497,8 @@ export default {
     async fetchData() {
       try {
         const [current, history] = await Promise.all([
-          axios.get("http://localhost:5000/dados"),
-          axios.get("http://localhost:5000/historico"),
+          axios.get("http://192.168.196.197:5000/dados"),
+          axios.get("http://192.168.196.197:5000/historico"),
         ]);
 
         this.dados = current.data;

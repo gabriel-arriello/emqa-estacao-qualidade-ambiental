@@ -11,7 +11,7 @@
 
 const char* ssid = "gabriel";
 const char* password = "arriello";
-const char* serverUMQ_RL = "http://192.168.254.197:5000/dados";
+const char* serverUMQ_RL = "http://192.168.196.197:5000/dados";
 
 // Definições de pinos
 #define MQ_ANALOG 1

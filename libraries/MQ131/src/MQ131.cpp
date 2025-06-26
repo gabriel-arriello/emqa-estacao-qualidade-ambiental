@@ -3,8 +3,8 @@
 
 // Definições das constantes estáticas da classe MQ131Class
 const float MQ131Class::V_SUPPLY = 3.26;
-const float MQ131Class::RLOAD_MQ = 950000.0;
-const float MQ131Class::R0_MQ = 125615.12;
+const float MQ131Class::RLOAD_MQ = 980000.0;
+const float MQ131Class::R0_MQ = 240452.89;
 
 /**
  * Construtor, nada especial a fazer
