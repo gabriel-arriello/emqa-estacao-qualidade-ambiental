@@ -191,11 +191,10 @@ function classificaIQAr(iqar) {
 }
 
 function classificaCO2(valor) {
-  if (valor <= 1000) return "Ótima";
-  if (valor <= 2500) return "Boa";
-  if (valor <= 5000) return "Moderada";
-  if (valor <= 40000) return "Ruim";
-  if (valor <= 100000) return "Muito ruim";
+  if (valor <= 1000) return "Boa";
+  if (valor <= 2500) return "Moderada";
+  if (valor <= 5000) return "Ruim";
+  if (valor <= 40000) return "Muito ruim";
   return "Péssima";
 }
 
@@ -217,9 +216,10 @@ function classificaUV(valor) {
 }
 
 function classificaDB(valor) {
-  if (valor <= 80) return "Boa";
-  if (valor <= 90) return "Moderada";
-  if (valor <= 120) return "Ruim";
+  if (valor <= 40) return "Ótima";
+  if (valor <= 60) return "Boa";
+  if (valor <= 80) return "Moderada";
+  if (valor <= 100) return "Ruim";
   return "Muito ruim";
 }
 
